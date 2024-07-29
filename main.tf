@@ -5,20 +5,109 @@ module "api_gateway" {
   source  = "cloudposse/api-gateway/aws"
   version = "v0.7.0"
 
-  name       = "shortner"
+  name       = "shortener"
   stage_name = "prod"
 
   openapi_config = {
     openapi = "3.0.1"
 
     info = {
-      title       = "shortner"
-      description = "URL Shortner"
+      title       = "shortener"
+      description = "URL shortener"
       version     = "1.0"
     }
 
     paths = {
-      "/short" = {
+      "/" = {
+        description = "Serve the entrypoint of the frontend"
+
+        get = {
+          responses = { "200" = {
+            description = "200 response"
+            content     = {}
+            headers     = { "Content-Type" = { schema = { type = "string" } } }
+          } }
+
+          x-amazon-apigateway-integration = {
+            type                = "aws"
+            uri                 = "arn:aws:apigateway:${data.aws_region.current.name}:s3:path/${"shortener-web-${random_string.bucket_suffix.id}"}/index.html"
+            httpMethod          = "GET"
+            credentials         = module.iam_role.iam_role_arn
+            passthroughBehavior = "when_no_templates"
+
+            responses = { default = {
+              statusCode         = "200"
+              responseParameters = { "method.response.header.Content-Type" = "integration.response.header.Content-Type" }
+            } }
+          }
+        }
+      }
+
+      "/web/{object}" = {
+        description = "Serve frontend files"
+
+        get = {
+          parameters = [{
+            name     = "object"
+            in       = "path"
+            required = true
+            schema   = { type = "string" }
+          }]
+
+          responses = { "200" = {
+            description = "200 response"
+            content     = {}
+            headers     = { "Content-Type" = { schema = { type = "string" } } }
+          } }
+
+          x-amazon-apigateway-integration = {
+            type                = "aws"
+            uri                 = "arn:aws:apigateway:${data.aws_region.current.name}:s3:path/${"shortener-web-${random_string.bucket_suffix.id}"}/{object}"
+            httpMethod          = "GET"
+            credentials         = module.iam_role.iam_role_arn
+            passthroughBehavior = "when_no_templates"
+            requestParameters   = { "integration.request.path.object" = "method.request.path.object" }
+
+            responses = { default = {
+              statusCode         = "200"
+              responseParameters = { "method.response.header.Content-Type" = "integration.response.header.Content-Type" }
+            } }
+          }
+        }
+      }
+
+      "/url" = {
+        description = "Manage URLs"
+
+        get = {
+          responses = { "200" = {
+            description = "200 response"
+            content     = {}
+          } }
+
+          x-amazon-apigateway-integration = {
+            type                = "aws"
+            uri                 = "arn:aws:apigateway:${data.aws_region.current.name}:dynamodb:action/Scan"
+            httpMethod          = "POST"
+            credentials         = module.iam_role.iam_role_arn
+            passthroughBehavior = "when_no_templates"
+            timeoutInMillis     = 29000
+            requestTemplates    = { "application/json" = jsonencode({ TableName = module.dynamodb_table.dynamodb_table_id }) }
+
+            responses = { "200" = {
+              statusCode = "200"
+
+              responseTemplates = { "application/json" = <<-EOF
+                #set($inputRoot = $input.path('$'))
+                {
+                  "urls": "$inputRoot.Items"
+                }
+                EOF
+              }
+            } }
+          }
+        }
+
         post = {
           responses = { "200" = {
             description = "200 response"
@@ -69,6 +158,8 @@ module "api_gateway" {
       }
 
       "/{id}" = {
+        description = "Use a redirect URL"
+
         get = {
           parameters = [{
             name     = "id"
@@ -148,22 +239,35 @@ module "iam_role" {
   ] # TODO: make this more granular
 }
 
-
-
 ###########################################################################################################################
 # S3 website
 ###########################################################################################################################
+resource "random_string" "bucket_suffix" {
+  length  = 5
+  special = false
+  upper   = false
+}
+
 module "s3_bucket_web" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "~> 4.1"
 
-  bucket_prefix = "shortner-web"
+  bucket        = "shortener-web-${random_string.bucket_suffix.id}"
   force_destroy = true
+  attach_policy = true
 
-  website = {
-    index_document = "index.html"
-    error_document = "error.html"
-  }
+  policy = jsonencode({
+    Version = "2012-10-17"
+
+    Statement = [{
+      Sid       = "ApiGatewayAccess"
+      Effect    = "Allow"
+      Action    = "s3:GetObject"
+      Resource  = "arn:aws:s3:::${"shortener-web-${random_string.bucket_suffix.id}"}/*"
+      Principal = { Service = "apigateway.amazonaws.com" }
+      Condition = { ArnLike = { "aws:SourceArn" = module.api_gateway.arn } }
+    }]
+  })
 }
 
 locals { mime_types = jsondecode(file("${path.module}/data/mime.json")) }
