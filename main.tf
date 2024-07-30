@@ -5,14 +5,15 @@ module "api_gateway" {
   source  = "cloudposse/api-gateway/aws"
   version = "v0.7.0"
 
-  name       = "shortener"
+  name       = var.name
   stage_name = "prod"
+  tags       = var.tags
 
   openapi_config = {
     openapi = "3.0.1"
 
     info = {
-      title       = "shortener"
+      title       = var.name
       description = "URL shortener"
       version     = "1.0"
     }
@@ -95,15 +96,8 @@ module "api_gateway" {
             requestTemplates    = { "application/json" = jsonencode({ TableName = module.dynamodb_table.dynamodb_table_id }) }
 
             responses = { "200" = {
-              statusCode = "200"
-
-              responseTemplates = { "application/json" = <<-EOF
-                #set($inputRoot = $input.path('$'))
-                {
-                  "urls": "$inputRoot.Items"
-                }
-                EOF
-              }
+              statusCode        = "200"
+              responseTemplates = { "application/json" = "$input.path('$').Items" }
             } }
           }
         }
