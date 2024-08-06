@@ -48,29 +48,28 @@
 
     <!-- Modal -->
     <div class="modal fade modal-dialog modal-dialog-centered" id="createUrl" tabindex="-1"
-        aria-labelledby="exampleModalLabel" aria-hidden="true">
+        aria-labelledby="urlModal" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalLabel">Create short URL</h1>
+                    <h1 class="modal-title fs-5" id="urlModal">Create short URL</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form>
                         <div class="mb-3">
-                            <label for="exampleInputEmail1" class="form-label">ID</label>
-                            <input type="email" class="form-control" id="exampleInputEmail1"
-                                aria-describedby="emailHelp">
+                            <label for="url-id" class="form-label">ID</label>
+                            <input type="email" class="form-control" id="url-id" aria-describedby="URL id">
                         </div>
                         <div class="mb-3">
-                            <label for="exampleInputPassword1" class="form-label">URL</label>
-                            <input type="password" class="form-control" id="exampleInputPassword1">
+                            <label for="url" class="form-label">URL</label>
+                            <input type="url" class="form-control" id="url">
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary">Create</button>
+                    <button type="button" class="btn btn-primary" onclick="createURL()">Create</button>
                 </div>
             </div>
         </div>
