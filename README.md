@@ -1,4 +1,4 @@
-# URL Shortner
+# URL Shortener
 
 This terraform module is an AWS implementation of a URL shortener app using serverless resources:
 
