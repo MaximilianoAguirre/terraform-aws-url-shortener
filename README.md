@@ -6,13 +6,6 @@ This terraform module is an AWS implementation of a URL shortener app using serv
 - A small frontend is stored in S3
 - A DynamoDB table is used for persistence
 
-## TODOS:
-
-- [ ] Add diagram to docs
-- [ ] Add handler for errors in create url
-- [ ] Add handler for errors in get url
-- [ ] Add pagination to get url list endpoint
-- [ ] Add pagination to frontend
 
 <!-- BEGIN_TF_DOCS -->
 
@@ -35,3 +28,12 @@ This terraform module is an AWS implementation of a URL shortener app using serv
 
 
 <!-- END_TF_DOCS -->
+
+
+## TODOS:
+
+- [ ] Add diagram to docs
+- [ ] Add handler for errors in create url
+- [ ] Add handler for errors in get url
+- [ ] Add pagination to get url list endpoint
+- [ ] Add pagination to frontend
